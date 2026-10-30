@@ -98,14 +98,49 @@ start with a digit from the repository root. Set `MCP_DOCS_DIR` in the host's
 server environment to use another directory. Documents load at startup; restart
 or reconnect after changes. Do not put secrets in documents exposed to agents.
 
-Each document needs YAML frontmatter with a unique nonempty `feature_id` and
-`summary`. Optional `keywords`, `tasks`, `related_docs`, and `source_files` are
-lists of strings; file references must name regular files in the document
-directory. Empty lists mean no values are recorded. Run the validation command
-above after edits. It checks metadata and references, not content accuracy.
+## Writing and maintaining documents
 
-Start with the [index](00-index.md) and [architecture guide](01-architecture-and-routing.md).
-Add numbered documents for new topics and update the index.
+Start with the [index](00-index.md), [architecture guide](01-architecture-and-routing.md),
+and [topic template](templates/topic.md). Copy the template into the document
+directory with a filename such as `02-orders.md`, give it a unique ID, and add
+a link to the index. Keep each document focused and remove sections that do not
+apply. Use [AGENTS.md](AGENTS.md) for repository-wide agent instructions.
+
+The frontmatter is this project's convention, not an MCP standard:
+
+- Required: nonempty string `feature_id` (unique across documents) and `summary`.
+- Optional: `keywords` and `tasks` are lists of search phrases; `related_docs`
+  lists filenames in the document directory; `source_files` lists paths relative
+  to the source root. Omit fields that have no recorded values.
+- Optional `owner` and quoted `last_verified` (for example, `"2026-10-30"`)
+  are maintainer notes. Review them as part of your team's documentation process;
+  the server does not enforce ownership or freshness.
+- Other fields are allowed for older documents or local conventions, but the
+  server does not interpret them as filters or authority signals.
+
+By default, the source root is the document directory. When documentation and
+application code live in separate directories, set both `MCP_DOCS_DIR` and
+`MCP_SOURCE_ROOT` to absolute paths in the client's server environment. For
+example, use `/project/docs` and `/project` respectively, then a source reference
+can be `src/orders.py`. Paths must be relative, stay inside the source root, and
+resolve to existing files. Source references are checked for existence; the
+server does not serve their contents. `related_docs` remains a list of filenames
+in the document directory.
+
+Run `.venv/bin/python -m kb_server.validate` after changes; set the same environment
+variables when validating a separate knowledge base. Validation checks metadata,
+unique IDs, and references, but cannot verify whether claims are correct or
+current. Link important claims to their source code, tests, contracts, or design
+decisions, and review them when those sources change. Markdown links and index
+coverage are not validated automatically.
+
+### Migrating an older knowledge base
+
+Existing documents with `feature_id` and `summary` remain supported; no bulk
+migration is required. Preserve IDs and filenames used by clients, remove unused
+fields gradually, and replace self-references in `source_files` with useful
+sources. Set `MCP_SOURCE_ROOT` before adding application-relative paths. Empty
+lists mean no values are recorded, not that a capability or permission is absent.
 
 ## License
 

@@ -7,8 +7,9 @@ from .server import ROOT
 
 def main():
     directory = Path(os.environ.get('MCP_DOCS_DIR', ROOT)).expanduser().resolve()
+    source_root = Path(os.environ.get('MCP_SOURCE_ROOT', directory)).expanduser().resolve()
     try:
-        docs = load_documents(directory)
+        docs = load_documents(directory, source_root)
         if not docs:
             raise ValueError('No numbered Markdown documents found')
         print(f'Validated {len(docs)} documents in {directory}')

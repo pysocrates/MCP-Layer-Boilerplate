@@ -1,74 +1,12 @@
 ---
 feature_id: architecture.routing
-area: architecture
-system: application-platform
-
-summary: "Portable guide to request routing, layer boundaries, and service placement."
-
-description: 
-  This document explains a framework-agnostic request lifecycle for web
-  applications, APIs, and worker-driven systems. It helps developers and agents
-  decide where logic belongs, how responsibilities should be separated, and how
-  the same business rules can be reused across HTTP requests, background jobs,
-  and internal automation.
-
-personas:
-  - developer
-  - operator
-  - agent
-
-surfaces:
-  - docs
-  - knowledge_base
-  - internal_reference
-
-ui_routes: []
-api_endpoints: []
-
-related_models: []
-source_files:
-  - 01-architecture-and-routing.md
-source_globs: []
-
-keywords:
-  - architecture
-  - routing
-  - middleware
-  - controllers
-  - services
-  - data-layer
-  - observability
-
-capabilities:
-  - architecture.reference
-  - request-flow
-  - code-placement
-  - docs.review
-
-permissions: []
-
-related_docs:
-  - 00-index.md
-
-events_emitted: []
-automations: []
-
+summary: "Guidance on request flows, layer boundaries, and code placement."
+keywords: [architecture, routing, middleware, controllers, services, persistence]
 tasks:
   - determine where new code should live
-  - explain the request lifecycle to developers and agents
-  - keep framework-specific details separate from architectural rules
-
-invariants:
-  - routers stay thin
-  - middleware handles cross-cutting concerns
-  - controllers translate inputs and outputs
-  - services own business rules
-  - the data layer owns persistence and external I/O
-
-edge_cases:
-  - webhook handlers that need both signature validation and business logic
-  - background jobs that reuse service logic without an HTTP request
-  - multi-tenant systems that resolve tenant context before business logic runs
+  - explain a request lifecycle
+related_docs:
+  - 00-index.md
 ---
 
 # Architecture and Routing
@@ -77,7 +15,12 @@ Purpose: offer a starting point for reasoning about common backend layers.
 This is generic guidance, not evidence of how a particular application works.
 Check the application code and its contracts before making changes.
 
-## Portable request lifecycle
+## When to use this guide
+
+Use these patterns to frame a placement decision, then check the actual code,
+contracts, and team conventions. A different architecture may be appropriate.
+
+## Example request lifecycle
 
 ```text
 Client or Event Source
@@ -133,7 +76,7 @@ Bad pattern:
 router -> database query -> branching business logic
 ```
 
-Correct pattern:
+Common alternative:
 
 ```text
 router -> controller -> service
@@ -210,9 +153,9 @@ These rules matter because they reduce rewrite risk:
 - A framework migration is easier when domain logic is not trapped inside
   routes, controllers, or ORM models.
 
-## Where new logic should go
+## Where new logic might go
 
-Use these decision rules:
+Use these as starting points, not universal rules:
 
 - If it chooses the destination handler, it belongs in the router.
 - If it applies broadly to many requests, it belongs in middleware.
@@ -220,9 +163,9 @@ Use these decision rules:
 - If it enforces product or workflow rules, it belongs in a service.
 - If it stores data or talks to another system, it belongs in the data layer.
 
-## Minimal example
+## Illustrative example
 
-For `POST /orders`:
+For a hypothetical `POST /orders` endpoint:
 
 - router matches `POST /orders`
 - middleware authenticates the caller and attaches request metadata

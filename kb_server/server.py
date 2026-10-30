@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parent.parent
 READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False)
 
 
-def create_server(directory: Path) -> FastMCP:
-    docs = load_documents(directory)
+def create_server(directory: Path, source_root: Path | None = None) -> FastMCP:
+    docs = load_documents(directory, source_root)
     if not docs:
         raise ValueError('No numbered Markdown documents found')
     by_name = {doc['name']: doc for doc in docs}
@@ -49,8 +49,9 @@ def create_server(directory: Path) -> FastMCP:
 
 def main() -> None:
     directory = Path(os.environ.get('MCP_DOCS_DIR', ROOT)).expanduser().resolve()
+    source_root = Path(os.environ.get('MCP_SOURCE_ROOT', directory)).expanduser().resolve()
     try:
-        create_server(directory).run(transport='stdio')
+        create_server(directory, source_root).run(transport='stdio')
     except (ValueError, OSError) as error:
         print(f'Knowledge base error: {error}', file=sys.stderr)
         raise SystemExit(1) from error

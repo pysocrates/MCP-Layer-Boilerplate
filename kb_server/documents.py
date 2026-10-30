@@ -5,8 +5,9 @@ from urllib.parse import quote
 import yaml
 
 
-def load_documents(directory: Path) -> list[dict]:
-    directory = Path(directory)
+def load_documents(directory: Path, source_root: Path | None = None) -> list[dict]:
+    directory = Path(directory).resolve()
+    source_root = Path(source_root).resolve() if source_root is not None else directory
     files = {p.name for p in directory.iterdir() if p.is_file() and not p.is_symlink()}
     names = sorted(name for name in files if re.match(r'^\d.*\.md$', name))
     documents = []
@@ -32,10 +33,16 @@ def load_documents(directory: Path) -> list[dict]:
         if metadata['feature_id'] in ids:
             raise ValueError(f"{name}: duplicate feature_id {metadata['feature_id']}")
         ids.add(metadata['feature_id'])
-        for field in ('related_docs', 'source_files'):
-            for ref in metadata.get(field, []):
-                if ref not in files:
-                    raise ValueError(f'{name}: {field} references missing file {ref}')
+        for ref in metadata.get('related_docs', []):
+            if ref not in files:
+                raise ValueError(f'{name}: related_docs references missing file {ref}')
+        for ref in metadata.get('source_files', []):
+            relative = Path(ref)
+            if not ref.strip() or relative.is_absolute() or '..' in relative.parts:
+                raise ValueError(f'{name}: source_files requires a relative path within the source root: {ref}')
+            target = (source_root / relative).resolve()
+            if not target.is_relative_to(source_root) or not target.is_file():
+                raise ValueError(f'{name}: source_files references missing or unsafe file {ref}')
         documents.append({'name': name, 'metadata': metadata, 'text': text,
                           'uri': f'kb://docs/{quote(name, safe="")}'} )
     return documents

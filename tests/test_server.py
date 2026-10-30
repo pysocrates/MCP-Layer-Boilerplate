@@ -23,6 +23,43 @@ class DocumentTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'missing file'):
                 load_documents(Path(tmp))
 
+    def test_source_references_are_scoped_to_source_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / 'docs'
+            source = root / 'app'
+            docs.mkdir()
+            (source / 'src').mkdir(parents=True)
+            (source / 'src' / 'orders.py').write_text('# example')
+            doc = docs / '01-orders.md'
+            def write_reference(reference):
+                doc.write_text(f'---\nfeature_id: orders\nsummary: Orders\nsource_files: ["{reference}"]\n---\n# Orders\n')
+            write_reference('src/orders.py')
+            self.assertEqual(len(load_documents(docs, source)), 1)
+            write_reference('src/missing.py')
+            with self.assertRaisesRegex(ValueError, 'missing or unsafe'):
+                load_documents(docs, source)
+            write_reference('../docs/01-orders.md')
+            with self.assertRaisesRegex(ValueError, 'relative path'):
+                load_documents(docs, source)
+            write_reference(str(root / 'outside.py'))
+            with self.assertRaisesRegex(ValueError, 'relative path'):
+                load_documents(docs, source)
+            (root / 'outside.py').write_text('# outside')
+            (source / 'src' / 'link.py').symlink_to(root / 'outside.py')
+            write_reference('src/link.py')
+            with self.assertRaisesRegex(ValueError, 'missing or unsafe'):
+                load_documents(docs, source)
+
+    def test_legacy_metadata_and_default_source_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'reference.py').write_text('# reference')
+            (root / '01-legacy.md').write_text(
+                '---\nfeature_id: legacy\nsummary: Legacy\nsource_files: [reference.py]\n'
+                'permissions: []\nedge_cases: [example]\n---\n# Legacy\n')
+            self.assertEqual(load_documents(root)[0]['metadata']['permissions'], [])
+
     def test_stdio_client(self):
         async def exercise():
             parameters = StdioServerParameters(command=sys.executable, args=[str(ROOT / 'server.py')], cwd=ROOT,
