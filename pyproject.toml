@@ -1,0 +1,6 @@
+[project]
+name = "mcp-layer-boilerplate"
+version = "1.0.0"
+description = "Read-only MCP server for a Markdown knowledge base"
+requires-python = ">=3.10"
+dependencies = ["mcp>=1.28,<2", "PyYAML>=6,<7"]

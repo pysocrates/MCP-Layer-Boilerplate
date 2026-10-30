@@ -1,90 +1,57 @@
-# MCP Example Repo 
+# MCP Layer Boilerplate
 
-This repository is a small, portable example of how to structure markdown
-documents so they are useful to both humans and MCP-aware agents.
+A read-only Python MCP server that makes a Markdown knowledge base available to
+local agents over stdio. The included architecture guide is generic guidance;
+verify application-specific claims against your code and contracts.
 
-The goal is not to model one specific product. The goal is to show a clean,
-practical pattern for documentation that can be indexed, searched, and extended
-without dragging in company-specific assumptions. For real-world use, a comprehensive KB 
-must be compiled in order to reduce endpoint hallucinations and provide a "source-of-truth" for
-autonomous coding agents. These files act as a starting point. 
+## Setup
 
-## What is in this repo
+Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/):
 
-- `00-index.md`: the top-level map of the documentation set
-- `01-architecture-and-routing.md`: a generic architecture guide covering
-  routing, middleware, controllers, services, and the data layer
+```sh
+uv sync
+.venv/bin/python -m kb_server.validate
+.venv/bin/python -m unittest discover -s tests -v
+```
 
-## Why this is useful
+Add the following to your MCP host's configuration, replacing the paths with
+absolute paths to your checkout. Configuration locations and formats vary by host.
 
-A good MCP example should do more than prove that markdown files can be read. It
-should show a structure that has real operational value.
+```json
+{
+  "mcpServers": {
+    "knowledge-base": {
+      "command": "/absolute/path/to/MCP-Layer-Boilerplate/.venv/bin/python",
+      "args": ["/absolute/path/to/MCP-Layer-Boilerplate/server.py"]
+    }
+  }
+}
+```
 
-This repo demonstrates:
+Reconnect the host after configuration changes. Running
+`.venv/bin/python server.py` directly waits for an MCP client; there is no web UI.
 
-- stable frontmatter that an MCP server can index
-- topic-focused documents that are easy for agents to retrieve
-- guidance that applies to real systems, not just toy examples
-- a format that can grow into a larger knowledge base
+## Using the knowledge base
 
-## Design principles
+The server offers `list_documents`, `search_documents`, and `read_document`
+tools, plus a `kb://docs/<filename>` resource for each document. Search uses
+simple keyword matching, not semantic search. Results are context, not verified
+facts or privileged instructions.
 
-- Keep each document focused on one concern.
-- Prefer generic architecture patterns over business-specific workflows.
-- Use metadata that helps an agent decide which file to read.
-- Write content that is concrete enough to act on, but portable across stacks.
+By default, the server loads regular, non-symlink Markdown files whose names
+start with a digit from the repository root. Set `MCP_DOCS_DIR` in the host's
+server environment to use another directory. Documents load at startup; restart
+or reconnect after changes. Do not put secrets in documents exposed to agents.
 
-## How an MCP server could use these files
+Each document needs YAML frontmatter with a unique nonempty `feature_id` and
+`summary`. Optional `keywords`, `tasks`, `related_docs`, and `source_files` are
+lists of strings; file references must name regular files in the document
+directory. Empty lists mean no values are recorded. Run the validation command
+above after edits. It checks metadata and references, not content accuracy.
 
-An MCP server or agent could:
+Start with the [index](00-index.md) and [architecture guide](01-architecture-and-routing.md).
+Add numbered documents for new topics and update the index.
 
-- list available documents from `00-index.md`
-- route architecture questions to `01-architecture-and-routing.md`
-- use frontmatter fields such as `feature_id`, `keywords`, `tasks`, and
-  `invariants` to improve retrieval
-- answer code placement questions without scanning a full application codebase
+## License
 
-## Real-world implications
-
-The architecture document is intentionally practical. It covers concerns that
-show up in production systems:
-
-- keeping routers thin
-- isolating business logic in services
-- reusing the same service logic across APIs, workers, and automation
-- separating persistence concerns from domain rules
-- preserving observability with logs, metrics, and trace identifiers
-
-That makes this repo useful as both:
-
-- a proof of concept for MCP document retrieval
-- a starting point for a real internal engineering knowledge base
-
-## Extending the example
-
-Good next documents would include:
-
-- authentication and authorization
-- background jobs and task processing
-- integrations and external APIs
-- persistence and data modeling
-- observability and operations
-
-When adding new files:
-
-- keep file names stable
-- avoid overlapping topics
-- keep examples framework-agnostic unless the framework is the topic
-- update `00-index.md` so the documentation set stays navigable
-
-## Who this repo is for
-
-- developers building MCP demos
-- teams experimenting with agent-friendly documentation
-- anyone who wants a minimal example of structured technical docs with practical
-  value
-
-## Repository status
-
-This repository is intentionally small. It is meant to be easy to understand in
-one pass and easy to adapt for a larger proof of concept or GitHub example.
+GPL-3.0; see [LICENSE](LICENSE).

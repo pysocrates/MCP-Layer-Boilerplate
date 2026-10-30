@@ -73,8 +73,9 @@ edge_cases:
 
 # Architecture and Routing
 
-Purpose: define a portable request flow that works across most modern backend
-stacks.
+Purpose: offer a starting point for reasoning about common backend layers.
+This is generic guidance, not evidence of how a particular application works.
+Check the application code and its contracts before making changes.
 
 ## Portable request lifecycle
 
@@ -89,7 +90,9 @@ Client or Event Source
   -> Response or Side Effect
 ```
 
-This flow applies to:
+This is an illustrative HTTP request flow. Other entry points may omit or
+combine layers; for example, a queue consumer may have no HTTP router or edge
+layer. Similar separation of concerns can help with:
 
 - browser requests
 - mobile API calls
@@ -183,7 +186,8 @@ belongs here.
 
 ### 6. Data layer
 
-The data layer handles persistence and external I/O.
+Persistence and integration adapters handle storage and external I/O. They
+may be separate layers depending on the application.
 
 Examples:
 
@@ -253,6 +257,6 @@ business rules.
 
 ## How agents should use this document
 
-Agents should use this document as a placement guide before creating code. It is
-meant to answer: "where should this logic live?" without needing a full scan of
-the repository.
+Agents can use this document as a starting point for deciding where logic might
+live. Inspect the relevant application code and existing conventions before
+choosing a placement; this generic guide cannot establish system-specific facts.
