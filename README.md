@@ -14,22 +14,77 @@ uv sync
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-Add the following to your MCP host's configuration, replacing the paths with
-absolute paths to your checkout. Configuration locations and formats vary by host.
+## Launch and connect
 
-```json
-{
-  "mcpServers": {
-    "knowledge-base": {
-      "command": "/absolute/path/to/MCP-Layer-Boilerplate/.venv/bin/python",
-      "args": ["/absolute/path/to/MCP-Layer-Boilerplate/server.py"]
-    }
-  }
-}
+The agent launches the server as a subprocess and communicates over stdio; you
+normally do not need a separate terminal. For a manual launch from the checkout:
+
+```sh
+.venv/bin/python server.py
 ```
 
-Reconnect the host after configuration changes. Running
-`.venv/bin/python server.py` directly waits for an MCP client; there is no web UI.
+It waits for MCP messages on stdin and has no web UI. Stop it with Ctrl+C.
+
+The examples below use absolute paths. Replace `/absolute/path/to/MCP-Layer-Boilerplate`
+with your checkout path, keeping each path inside the quotes. The examples are
+for macOS/Linux; on Windows use the virtual environment's `Scripts/python.exe`
+and appropriate absolute paths.
+
+### Codex
+
+```sh
+codex mcp add knowledge-base -- \
+  "/absolute/path/to/MCP-Layer-Boilerplate/.venv/bin/python" \
+  "/absolute/path/to/MCP-Layer-Boilerplate/server.py"
+codex mcp list
+```
+
+Restart Codex or start a new session, then use `/mcp` to inspect the connection.
+See [Codex MCP documentation](https://developers.openai.com/codex/mcp).
+
+### Claude Code
+
+```sh
+claude mcp add --transport stdio --scope user knowledge-base -- \
+  "/absolute/path/to/MCP-Layer-Boilerplate/.venv/bin/python" \
+  "/absolute/path/to/MCP-Layer-Boilerplate/server.py"
+claude mcp list
+```
+
+Start a Claude Code session and use `/mcp` to inspect the connection. User scope
+makes the entry available across projects; see [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp) for other scopes.
+
+### Hermes Agent
+
+Add this entry under `mcp_servers` in `~/.hermes/config.yaml` (merge it with any
+existing entries):
+
+```yaml
+mcp_servers:
+  knowledge-base:
+    command: "/absolute/path/to/MCP-Layer-Boilerplate/.venv/bin/python"
+    args: ["/absolute/path/to/MCP-Layer-Boilerplate/server.py"]
+```
+
+Run `hermes chat` and ask it to list the knowledge base documents. MCP support
+is included in the standard Hermes install; see the [Hermes MCP guide](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/user-guide/features/mcp.md) for other installations.
+
+### Pi coding agent
+
+For a Pi version with built-in MCP support:
+
+```sh
+pi mcp add knowledge-base -- \
+  "/absolute/path/to/MCP-Layer-Boilerplate/.venv/bin/python" \
+  "/absolute/path/to/MCP-Layer-Boilerplate/server.py"
+pi mcp list
+```
+
+Start Pi and use `/mcp` to inspect the connection. See the [Pi MCP guide](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/mcp.md) for project-level configuration and older setups.
+
+For any client, try asking: “Use the knowledge-base server to list its documents.”
+If it cannot connect, check the Python and server paths and inspect the client's
+MCP error output. The server sends protocol messages to stdout and errors to stderr.
 
 ## Using the knowledge base
 
